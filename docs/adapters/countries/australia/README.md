@@ -129,7 +129,7 @@ If you can't replace the lock:
 
 **Opportunity**: Design a 3D-printable adapter for Lockwood oval cylinders.
 
-See [3D Models](../3d/README.md) for design guidelines.
+See [3D Models](../../3d/README.md) for design guidelines.
 
 ---
 
@@ -225,8 +225,8 @@ See [3D Models](../3d/README.md) for design guidelines.
 
 ## See Also
 
-- [Adapters Guide](../README.md)
-- [Visual Diagrams](../diagrams/README.md) - See Lockwood 001 image
-- [3D Models](../3d/README.md) - Custom adapter designs
-- [New Zealand Guide](new-zealand.md) - Similar market
-- [Asia/Australia Overview](../ASIA-AUSTRALIA-GAPS.md)
+- [Adapters Guide](../../README.md)
+- [Visual Diagrams](../../diagrams/README.md) - See Lockwood 001 image
+- [3D Models](../../3d/README.md) - Custom adapter designs
+- [New Zealand Guide](../new-zealand/) - Similar market
+- [Asia/Australia Overview](../../ASIA-AUSTRALIA-GAPS.md)

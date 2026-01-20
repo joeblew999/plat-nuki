@@ -145,7 +145,7 @@ For Malaysia deployments:
 
 ## See Also
 
-- [Adapters Guide](../README.md)
-- [Singapore Guide](singapore.md) - Similar market
-- [Thailand Guide](thailand.md)
-- [Asia/Australia Overview](../ASIA-AUSTRALIA-GAPS.md)
+- [Adapters Guide](../../README.md)
+- [Singapore Guide](../singapore/) - Similar market
+- [Thailand Guide](../thailand/)
+- [Asia/Australia Overview](../../ASIA-AUSTRALIA-GAPS.md)
