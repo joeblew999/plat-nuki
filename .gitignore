@@ -1,0 +1,15 @@
+# Private folder - not committed
+private/
+
+# Source repositories
+.src/
+
+# Build output
+.bin/
+
+# Hugo build output
+site/public/
+site/resources/
+site/node_modules/
+site/.hugo_build.lock
+site/hugo_stats.json

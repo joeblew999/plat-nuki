@@ -1,0 +1,147 @@
+version: '3'
+
+env:
+  GOWORK: off
+
+vars:
+  SRC_DIR: .src
+  BIN_DIR: .bin
+  SITE_DIR: site
+
+  # This repo
+  GITHUB_OWNER: joeblew999
+  GITHUB_REPO: plat-nuki
+  SITE_TITLE: Plat Nuki
+
+  # GitHub repositories
+  REPO_HUGOPLATE: https://github.com/zeon-studio/hugoplate.git
+  REPO_HUGOPLATE_VERSION: main
+  REPO_GO_NUKI: https://github.com/nuki-io/go-nuki.git
+  REPO_GO_NUKI_VERSION: main
+  REPO_NUKI_CLI: https://github.com/nuki-io/nuki-cli.git
+  REPO_NUKI_CLI_VERSION: main
+  REPO_GO_NUKI_BLE: https://github.com/qvest-digital/go-nuki.git
+  REPO_GO_NUKI_BLE_VERSION: main
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  # Source repository management
+  src:init:
+    desc: Create .src and .bin directories
+    cmds:
+      - mkdir -p {{.SRC_DIR}}
+      - mkdir -p {{.BIN_DIR}}
+    status:
+      - test -d {{.SRC_DIR}}
+      - test -d {{.BIN_DIR}}
+
+  src:sync:
+    desc: Clone or update all repositories (idempotent)
+    deps: [src:init]
+    cmds:
+      - task: src:sync:go-nuki
+      - task: src:sync:nuki-cli
+      - task: src:sync:go-nuki-ble
+
+  src:sync:go-nuki:
+    desc: Sync Nuki Go Web API Client
+    internal: true
+    cmds:
+      - test -d {{.SRC_DIR}}/go-nuki && git -C {{.SRC_DIR}}/go-nuki fetch && git -C {{.SRC_DIR}}/go-nuki checkout {{.REPO_GO_NUKI_VERSION}} || git clone -b {{.REPO_GO_NUKI_VERSION}} {{.REPO_GO_NUKI}} {{.SRC_DIR}}/go-nuki
+
+  src:sync:nuki-cli:
+    desc: Sync Nuki CLI Tool
+    internal: true
+    cmds:
+      - test -d {{.SRC_DIR}}/nuki-cli && git -C {{.SRC_DIR}}/nuki-cli fetch && git -C {{.SRC_DIR}}/nuki-cli checkout {{.REPO_NUKI_CLI_VERSION}} || git clone -b {{.REPO_NUKI_CLI_VERSION}} {{.REPO_NUKI_CLI}} {{.SRC_DIR}}/nuki-cli
+
+  src:sync:go-nuki-ble:
+    desc: Sync Qvest Digital Go Nuki BLE library
+    internal: true
+    cmds:
+      - test -d {{.SRC_DIR}}/go-nuki-ble && git -C {{.SRC_DIR}}/go-nuki-ble fetch && git -C {{.SRC_DIR}}/go-nuki-ble checkout {{.REPO_GO_NUKI_BLE_VERSION}} || git clone -b {{.REPO_GO_NUKI_BLE_VERSION}} {{.REPO_GO_NUKI_BLE}} {{.SRC_DIR}}/go-nuki-ble
+
+  src:clean:
+    desc: Remove all cloned repositories
+    cmds:
+      - rm -rf {{.SRC_DIR}}/*
+    prompt: This will delete all repositories in {{.SRC_DIR}}. Continue?
+
+  # Hugo site management
+  site:init:
+    desc: Initialize Hugo site from Hugoplate exampleSite
+    cmds:
+      - git clone --depth 1 {{.REPO_HUGOPLATE}} /tmp/hugoplate-tmp
+      - mkdir -p {{.SITE_DIR}}
+      - cp -r /tmp/hugoplate-tmp/exampleSite/* {{.SITE_DIR}}/
+      - cp /tmp/hugoplate-tmp/package.json {{.SITE_DIR}}/
+      - rm -rf /tmp/hugoplate-tmp
+      - cd {{.SITE_DIR}} && sed -i '' 's|baseURL = "https://example.org"|baseURL = "https://{{.GITHUB_OWNER}}.github.io/{{.GITHUB_REPO}}/"|' hugo.toml
+      - cd {{.SITE_DIR}} && sed -i '' 's|title = "Hugoplate"|title = "{{.SITE_TITLE}}"|' hugo.toml
+      - cd {{.SITE_DIR}} && bun install
+      - cd {{.SITE_DIR}} && hugo mod get -u
+    status:
+      - test -f {{.SITE_DIR}}/hugo.toml
+
+  site:deps:
+    desc: Install Hugo site dependencies (bun)
+    dir: "{{.SITE_DIR}}"
+    deps: [site:init]
+    cmds:
+      - bun install
+    sources:
+      - "{{.SITE_DIR}}/package.json"
+    generates:
+      - "{{.SITE_DIR}}/node_modules/.package-lock.json"
+
+  site:dev:
+    desc: Run Hugo development server
+    dir: "{{.SITE_DIR}}"
+    deps: [site:deps]
+    cmds:
+      - hugo server -D --bind 0.0.0.0
+
+  site:build:
+    desc: Build Hugo site for production
+    dir: "{{.SITE_DIR}}"
+    deps: [site:deps]
+    cmds:
+      - hugo --minify
+
+  site:clean:
+    desc: Clean Hugo build output
+    cmds:
+      - rm -rf {{.SITE_DIR}}/public
+      - rm -rf {{.SITE_DIR}}/resources
+      - rm -rf {{.SITE_DIR}}/.hugo_build.lock
+
+  site:pages:
+    desc: Enable GitHub Pages (idempotent)
+    cmds:
+      - gh api repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages 2>/dev/null || gh api -X POST repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages --input /dev/stdin <<< '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
+      - gh api -X PUT repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages --input /dev/stdin <<< '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
+    status:
+      - gh api repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages 2>/dev/null
+
+  site:deploy:
+    desc: Build and deploy site to gh-pages branch
+    deps: [site:build]
+    cmds:
+      - cd {{.SITE_DIR}}/public && git init
+      - cd {{.SITE_DIR}}/public && git add -A
+      - cd {{.SITE_DIR}}/public && git diff --cached --quiet && echo "No changes to deploy" || (git commit -m "Deploy" && git push -f https://github.com/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}.git HEAD:gh-pages && gh api -X POST repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages/builds)
+      - rm -rf {{.SITE_DIR}}/public/.git
+
+  # Prerequisites check
+  check:prereqs:
+    desc: Check that required tools are installed
+    cmds:
+      - which hugo || (echo "hugo not found - brew install hugo" && exit 1)
+      - which bun || (echo "bun not found - brew install bun" && exit 1)
+      - which task || (echo "task not found - brew install go-task" && exit 1)
+      - which gh || (echo "gh not found - brew install gh" && exit 1)
+      - echo "All prerequisites installed"
