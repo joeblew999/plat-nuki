@@ -1,0 +1,54 @@
+# Process Compose configuration for local development
+# Run: process-compose up --tui=false
+# Or:  process-compose up (for interactive TUI)
+# Install: brew install f1bonacc1/tap/process-compose
+
+version: "0.5"
+
+processes:
+  # OpenObserve for observability
+  openobserve:
+    command: |
+      # Idempotent: stop existing, start fresh
+      docker stop openobserve 2>/dev/null || true
+      docker rm openobserve 2>/dev/null || true
+      mkdir -p .data/openobserve
+      exec docker run --rm --name openobserve \
+        -v "$(pwd)/.data/openobserve:/data" \
+        -e ZO_DATA_DIR=/data \
+        -e ZO_ROOT_USER_EMAIL=admin@example.com \
+        -e ZO_ROOT_USER_PASSWORD=Admin123! \
+        -p 5080:5080 \
+        public.ecr.aws/zinclabs/openobserve:latest
+    readiness_probe:
+      http_get:
+        host: localhost
+        port: 5080
+        path: /healthz
+      initial_delay_seconds: 3
+      period_seconds: 3
+      failure_threshold: 20
+    shutdown:
+      command: docker stop openobserve 2>/dev/null || true
+
+  # Nuki BLE Bridge HTTP server
+  bridge:
+    command: .bin/nuki-bridge serve -port 8081 -demo
+    depends_on:
+      openobserve:
+        condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: localhost
+        port: 8081
+        path: /docs
+      initial_delay_seconds: 2
+      period_seconds: 3
+      failure_threshold: 10
+
+  # Hugo documentation site (disabled by default)
+  site:
+    command: |
+      lsof -ti:1313 | xargs kill -9 2>/dev/null || true
+      cd site && exec hugo server -D --bind 0.0.0.0
+    disabled: true

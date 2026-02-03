@@ -7,6 +7,12 @@ private/
 # Build output
 .bin/
 
+# Task runner cache
+.task/
+
+# Data directory
+.data/
+
 # Hugo build output
 site/public/
 site/resources/

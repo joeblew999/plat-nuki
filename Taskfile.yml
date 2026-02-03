@@ -1,19 +1,18 @@
 version: '3'
 
-env:
-  GOWORK: off
-
 vars:
+  # Directories
   SRC_DIR: .src
   BIN_DIR: .bin
+  DATA_DIR: .data
   SITE_DIR: site
 
-  # This repo
+  # Project info
   GITHUB_OWNER: joeblew999
   GITHUB_REPO: plat-nuki
   SITE_TITLE: Plat Nuki
 
-  # GitHub repositories
+  # External repositories
   REPO_HUGOPLATE: https://github.com/zeon-studio/hugoplate.git
   REPO_HUGOPLATE_VERSION: main
   REPO_GO_NUKI: https://github.com/nuki-io/go-nuki.git
@@ -22,58 +21,221 @@ vars:
   REPO_NUKI_CLI_VERSION: main
   REPO_GO_NUKI_BLE: https://github.com/qvest-digital/go-nuki.git
   REPO_GO_NUKI_BLE_VERSION: main
+  REPO_HUMA: https://github.com/danielgtaylor/huma.git
+  REPO_HUMA_VERSION: main
 
 tasks:
+  #============================================================================
+  # Default
+  #============================================================================
   default:
     desc: List available tasks
     cmds:
       - task --list
 
-  # Source repository management
+  #============================================================================
+  # Project Setup
+  #============================================================================
+  project:setup:
+    desc: Full project setup (prereqs + sync + generate)
+    cmds:
+      - task: project:prereqs
+      - task: src:sync
+      - task: go:generate
+
+  project:prereqs:
+    desc: Check required tools are installed
+    cmds:
+      - which go || (echo "go not found - brew install go" && exit 1)
+      - which task || (echo "task not found - brew install go-task" && exit 1)
+      - which hugo || (echo "hugo not found - brew install hugo" && exit 1)
+      - which bun || (echo "bun not found - brew install bun" && exit 1)
+      - which gh || (echo "gh not found - brew install gh" && exit 1)
+      - which docker || (echo "docker not found - install Docker Desktop" && exit 1)
+      - echo "All prerequisites installed"
+
+  #============================================================================
+  # Source Repository Management
+  #============================================================================
   src:init:
-    desc: Create .src and .bin directories
+    desc: Create project directories
     cmds:
       - mkdir -p {{.SRC_DIR}}
       - mkdir -p {{.BIN_DIR}}
+      - mkdir -p {{.DATA_DIR}}
     status:
       - test -d {{.SRC_DIR}}
       - test -d {{.BIN_DIR}}
+      - test -d {{.DATA_DIR}}
 
   src:sync:
-    desc: Clone or update all repositories (idempotent)
+    desc: Clone or update all external repositories
     deps: [src:init]
     cmds:
-      - task: src:sync:go-nuki
       - task: src:sync:nuki-cli
+      - task: src:sync:go-nuki
       - task: src:sync:go-nuki-ble
-
-  src:sync:go-nuki:
-    desc: Sync Nuki Go Web API Client
-    internal: true
-    cmds:
-      - test -d {{.SRC_DIR}}/go-nuki && git -C {{.SRC_DIR}}/go-nuki fetch && git -C {{.SRC_DIR}}/go-nuki checkout {{.REPO_GO_NUKI_VERSION}} || git clone -b {{.REPO_GO_NUKI_VERSION}} {{.REPO_GO_NUKI}} {{.SRC_DIR}}/go-nuki
+      - task: src:sync:huma
 
   src:sync:nuki-cli:
-    desc: Sync Nuki CLI Tool
     internal: true
     cmds:
       - test -d {{.SRC_DIR}}/nuki-cli && git -C {{.SRC_DIR}}/nuki-cli fetch && git -C {{.SRC_DIR}}/nuki-cli checkout {{.REPO_NUKI_CLI_VERSION}} || git clone -b {{.REPO_NUKI_CLI_VERSION}} {{.REPO_NUKI_CLI}} {{.SRC_DIR}}/nuki-cli
 
+  src:sync:go-nuki:
+    internal: true
+    cmds:
+      - test -d {{.SRC_DIR}}/go-nuki && git -C {{.SRC_DIR}}/go-nuki fetch && git -C {{.SRC_DIR}}/go-nuki checkout {{.REPO_GO_NUKI_VERSION}} || git clone -b {{.REPO_GO_NUKI_VERSION}} {{.REPO_GO_NUKI}} {{.SRC_DIR}}/go-nuki
+
   src:sync:go-nuki-ble:
-    desc: Sync Qvest Digital Go Nuki BLE library
     internal: true
     cmds:
       - test -d {{.SRC_DIR}}/go-nuki-ble && git -C {{.SRC_DIR}}/go-nuki-ble fetch && git -C {{.SRC_DIR}}/go-nuki-ble checkout {{.REPO_GO_NUKI_BLE_VERSION}} || git clone -b {{.REPO_GO_NUKI_BLE_VERSION}} {{.REPO_GO_NUKI_BLE}} {{.SRC_DIR}}/go-nuki-ble
 
+  src:sync:huma:
+    internal: true
+    cmds:
+      - test -d {{.SRC_DIR}}/huma && git -C {{.SRC_DIR}}/huma fetch && git -C {{.SRC_DIR}}/huma checkout {{.REPO_HUMA_VERSION}} || git clone -b {{.REPO_HUMA_VERSION}} {{.REPO_HUMA}} {{.SRC_DIR}}/huma
+
   src:clean:
     desc: Remove all cloned repositories
+    prompt: This will delete all repositories in {{.SRC_DIR}}. Continue?
     cmds:
       - rm -rf {{.SRC_DIR}}/*
-    prompt: This will delete all repositories in {{.SRC_DIR}}. Continue?
 
-  # Hugo site management
+  #============================================================================
+  # Go Build & Development
+  #============================================================================
+  go:build:
+    desc: Build nuki-bridge binary (runs on embedded device)
+    deps: [src:init, go:generate]
+    cmds:
+      - go build -o {{.BIN_DIR}}/nuki-bridge ./cmd/bridge
+
+  go:generate:
+    desc: Generate stringer files for nuki-cli
+    internal: true
+    cmds:
+      - cd {{.SRC_DIR}}/nuki-cli/pkg/blecommands && go generate ./...
+    sources:
+      - "{{.SRC_DIR}}/nuki-cli/pkg/blecommands/*.go"
+    generates:
+      - "{{.SRC_DIR}}/nuki-cli/pkg/blecommands/*_string.go"
+
+  go:test:
+    desc: Run Go tests
+    cmds:
+      - go test -v ./...
+
+  go:lint:
+    desc: Run Go linter
+    cmds:
+      - go vet ./...
+
+  go:clean:
+    desc: Clean Go build artifacts
+    cmds:
+      - rm -rf {{.BIN_DIR}}/*
+      - go clean
+
+  #============================================================================
+  # Bridge Commands (run on embedded device)
+  #============================================================================
+  bridge:scan:
+    desc: Scan for Nuki devices
+    deps: [go:build]
+    cmds:
+      - "{{.BIN_DIR}}/nuki-bridge scan -t 10s"
+
+  bridge:status:
+    desc: Get lock status (requires paired device)
+    deps: [go:build]
+    cmds:
+      - "{{.BIN_DIR}}/nuki-bridge status"
+
+  bridge:lock:
+    desc: Lock the device
+    deps: [go:build]
+    cmds:
+      - "{{.BIN_DIR}}/nuki-bridge lock"
+
+  bridge:unlock:
+    desc: Unlock the device
+    deps: [go:build]
+    cmds:
+      - "{{.BIN_DIR}}/nuki-bridge unlock"
+
+  bridge:serve:
+    desc: Start HTTP server for remote control
+    deps: [go:build]
+    cmds:
+      - "{{.BIN_DIR}}/nuki-bridge serve -port 8080"
+
+  #============================================================================
+  # API Spec & Client Generation
+  #============================================================================
+  api:spec:
+    desc: Generate OpenAPI spec from Huma routes
+    cmds:
+      - go run cmd/genspec/main.go > openapi.json
+      - echo "OpenAPI spec saved to openapi.json"
+
+  api:client:go:
+    desc: Generate Go client from OpenAPI spec
+    deps: [api:spec]
+    cmds:
+      - mkdir -p pkg/client
+      - go run github.com/ogen-go/ogen/cmd/ogen@latest -target pkg/client -package client -clean openapi.json
+      - echo "Go client generated in pkg/client/"
+
+  api:client:ts:
+    desc: Generate TypeScript client from OpenAPI spec
+    deps: [api:spec]
+    cmds:
+      - npx openapi-typescript-codegen --input openapi.json --output ts-client --client fetch
+      - echo "TypeScript client generated in ts-client/"
+
+  #============================================================================
+  # Observability (OpenObserve)
+  #============================================================================
+  otel:start:
+    desc: Start OpenObserve container
+    cmds:
+      - mkdir -p {{.DATA_DIR}}/openobserve
+      - docker rm -f openobserve 2>/dev/null || true
+      - 'docker run -d --name openobserve -v $(pwd)/{{.DATA_DIR}}/openobserve:/data -e ZO_DATA_DIR=/data -e ZO_ROOT_USER_EMAIL=admin@example.com -e ZO_ROOT_USER_PASSWORD=Admin123! -p 5080:5080 public.ecr.aws/zinclabs/openobserve:latest'
+      - echo ""
+      - echo "OpenObserve started at http://localhost:5080"
+      - 'echo "Login: admin@example.com / Admin123!"'
+
+  otel:stop:
+    desc: Stop OpenObserve container
+    cmds:
+      - docker stop openobserve 2>/dev/null || true
+      - docker rm openobserve 2>/dev/null || true
+      - echo "OpenObserve stopped"
+
+  otel:status:
+    desc: Check OpenObserve status
+    cmds:
+      - docker ps -a --filter "name=openobserve"
+
+  otel:logs:
+    desc: View OpenObserve logs
+    cmds:
+      - docker logs -f openobserve
+
+  otel:restart:
+    desc: Restart OpenObserve container
+    cmds:
+      - task: otel:stop
+      - task: otel:start
+
+  #============================================================================
+  # Hugo Documentation Site
+  #============================================================================
   site:init:
-    desc: Initialize Hugo site from Hugoplate exampleSite
+    desc: Initialize Hugo site from Hugoplate
     cmds:
       - git clone --depth 1 {{.REPO_HUGOPLATE}} /tmp/hugoplate-tmp
       - mkdir -p {{.SITE_DIR}}
@@ -88,7 +250,7 @@ tasks:
       - test -f {{.SITE_DIR}}/hugo.toml
 
   site:deps:
-    desc: Install Hugo site dependencies (bun)
+    desc: Install Hugo site dependencies
     dir: "{{.SITE_DIR}}"
     deps: [site:init]
     cmds:
@@ -120,7 +282,7 @@ tasks:
       - rm -rf {{.SITE_DIR}}/.hugo_build.lock
 
   site:pages:
-    desc: Enable GitHub Pages (idempotent)
+    desc: Enable GitHub Pages
     cmds:
       - gh api repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages 2>/dev/null || gh api -X POST repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages --input /dev/stdin <<< '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
       - gh api -X PUT repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages --input /dev/stdin <<< '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
@@ -128,7 +290,7 @@ tasks:
       - gh api repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages 2>/dev/null
 
   site:deploy:
-    desc: Build and deploy site to gh-pages branch
+    desc: Build and deploy site to gh-pages
     deps: [site:build]
     cmds:
       - cd {{.SITE_DIR}}/public && git init
@@ -136,12 +298,22 @@ tasks:
       - cd {{.SITE_DIR}}/public && git diff --cached --quiet && echo "No changes to deploy" || (git commit -m "Deploy" && git push -f https://github.com/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}.git HEAD:gh-pages && gh api -X POST repos/{{.GITHUB_OWNER}}/{{.GITHUB_REPO}}/pages/builds)
       - rm -rf {{.SITE_DIR}}/public/.git
 
-  # Prerequisites check
-  check:prereqs:
-    desc: Check that required tools are installed
+  #============================================================================
+  # Cleanup
+  #============================================================================
+  project:clean:
+    desc: Clean all build artifacts and generated files
     cmds:
-      - which hugo || (echo "hugo not found - brew install hugo" && exit 1)
-      - which bun || (echo "bun not found - brew install bun" && exit 1)
-      - which task || (echo "task not found - brew install go-task" && exit 1)
-      - which gh || (echo "gh not found - brew install gh" && exit 1)
-      - echo "All prerequisites installed"
+      - task: go:clean
+      - task: site:clean
+      - rm -f openapi.json
+      - rm -rf ts-client
+
+  project:clean:all:
+    desc: Full cleanup including data and sources
+    prompt: This will delete all data, sources, and artifacts. Continue?
+    cmds:
+      - task: project:clean
+      - task: src:clean
+      - task: otel:stop
+      - rm -rf {{.DATA_DIR}}
