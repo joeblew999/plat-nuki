@@ -6,6 +6,22 @@ Code and docs for Nuki smart locks.
 
 Needs testing with real sample lock, and integration into xplat ecosystem.
 
+## Run with Xplat
+
+```sh
+xplat up
+```
+
+![xplat Dashboard](docs/images/xplat-dashboard.png)
+
+![xplat Tasks](docs/images/xplat-tasks.png)
+
+![xplat Processes](docs/images/xplat-processes.png)
+
+![xplat Logs](docs/images/xplat-logs.png)
+
+![xplat Graph](docs/images/xplat-graph.png)
+
 ## Acknowledgements
 
 This project builds on the excellent work of:
