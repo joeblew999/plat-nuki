@@ -1,3 +1,9 @@
+---
+title: "Next-Gen Smart Locks (2025-2026)"
+date: 2024-01-15
+draft: false
+---
+
 # Next-Gen Smart Locks (2025-2026)
 
 The cutting-edge locks that leapfrog legacy hotel lock systems.

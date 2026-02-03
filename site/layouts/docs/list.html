@@ -1,0 +1,21 @@
+{{ define "main" }}
+<section class="section pt-14">
+  <div class="container">
+    <div class="row justify-center">
+      <div class="lg:col-10">
+        <div class="mb-10">
+          <h1 class="h2 mb-4">{{ .Title }}</h1>
+          {{ with .Params.description }}
+          <p class="text-lg text-text">{{ . }}</p>
+          {{ end }}
+        </div>
+
+        <div class="content">
+          {{ .Content }}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+{{ end }}

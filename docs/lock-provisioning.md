@@ -1,3 +1,9 @@
+---
+title: "How Smart Locks Get Provisioned"
+date: 2024-01-15
+draft: false
+---
+
 # How Smart Locks Get Provisioned
 
 Provisioning is where the real differences show up between cheap/consumer locks and commercial/hospitality systems.

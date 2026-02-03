@@ -1,3 +1,9 @@
+---
+title: "Asia & Australia Market Analysis"
+date: 2024-01-15
+draft: false
+---
+
 # Asia & Australia Market Analysis
 
 **Purpose**: Document Nuki compatibility gaps and solutions for Asia-Pacific deployment.
@@ -354,9 +360,9 @@ South Korea has already transitioned to digital locks as the default:
 
 ## References
 
-- [Door Lock Types](../door-lock-types.md) - Full technical guide
-- [Official Adapters](README.md) - Nuki adapter reference
-- [3D Models](3d/README.md) - Printable adapter sources
+- [Door Lock Types](../door-lock-types/) - Full technical guide
+- [Official Adapters](./) - Nuki adapter reference
+- [3D Models](3d/) - Printable adapter sources
 - [Lockwood Product Catalog](https://www.assaabloyopeningsolutions.com.au/lockwood) - Australian lock specs
 
 ---

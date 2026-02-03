@@ -1,3 +1,9 @@
+---
+title: "How Smart Locks Work When Battery Dies"
+date: 2024-01-15
+draft: false
+---
+
 # How Smart Locks Work When Battery Dies
 
 ## 1. Apple Home Key / NFC Wallet Keys — Power Reserve

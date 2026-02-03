@@ -1,3 +1,9 @@
+---
+title: "Budget Lock Options with API Access"
+date: 2024-01-15
+draft: false
+---
+
 # Budget Lock Options with API Access
 
 Goki isn't cheap — **$300-500+ per lock** plus monthly platform fees. Here are cheaper alternatives with similar API capabilities.

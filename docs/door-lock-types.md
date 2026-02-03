@@ -1,3 +1,9 @@
+---
+title: "Door Lock Types & Adapters"
+date: 2024-01-15
+draft: false
+---
+
 # Door Lock Types & Adapters
 
 Understanding lock types is essential for smart lock compatibility. The US and Europe use fundamentally different systems.
@@ -650,7 +656,7 @@ If you're deploying Nuki in new markets, here are the gaps to fill:
    - Help the community
    - Get feedback
 
-See [3D Models](adapters/3d/README.md) for existing designs.
+See [3D Models](adapters/3d/) for existing designs.
 
 ---
 
@@ -664,6 +670,6 @@ See [3D Models](adapters/3d/README.md) for existing designs.
 
 ## See Also
 
-- [Adapters Guide](adapters/README.md) - Official adapters and how they work
-- [3D Printable Adapters](adapters/3d/README.md) - Community solutions when stock adapters don't fit
-- [Nuki API](nuki-api.md) - Technical integration options
+- [Adapters Guide](adapters/) - Official adapters and how they work
+- [3D Printable Adapters](adapters/3d/) - Community solutions when stock adapters don't fit
+- [Nuki API](./nuki-api/) - Technical integration options

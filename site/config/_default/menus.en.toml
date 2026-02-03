@@ -7,57 +7,32 @@ url = "/"
 weight = 1
 
 [[main]]
-name = "About"
-url = "/about"
+name = "Docs"
+url = "/docs"
 weight = 2
 
 [[main]]
-name = "Elements"
-url = "/elements"
+name = "Adapters"
+url = "/docs/adapters"
 weight = 3
 
 [[main]]
+name = "Countries"
+url = "/docs/adapters/countries"
 weight = 4
-name = "Pages"
-
-[[main]]
-parent = "Pages"
-name = "Blog"
-url = "/blog"
-
-[[main]]
-parent = "Pages"
-name = "Contact"
-url = "/contact"
-
-[[main]]
-parent = "Pages"
-name = "Authors"
-url = "/authors"
-
-[[main]]
-parent = "Pages"
-name = "Categories"
-url = "/categories"
-
-[[main]]
-parent = "Pages"
-name = "404 Page"
-url = "/404"
-
 
 # footer menu
 [[footer]]
-name = "About"
-url = "/about"
+name = "Docs"
+url = "/docs"
 weight = 1
 
 [[footer]]
-name = "Elements"
-url = "/elements"
+name = "Adapters"
+url = "/docs/adapters"
 weight = 2
 
 [[footer]]
-name = "Privacy Policy"
-url = "/privacy-policy"
+name = "GitHub"
+url = "https://github.com/joeblew999/plat-nuki"
 weight = 3

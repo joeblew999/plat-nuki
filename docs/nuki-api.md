@@ -1,3 +1,9 @@
+---
+title: "Nuki API Options"
+date: 2024-01-15
+draft: false
+---
+
 # Nuki API Options
 
 Nuki is one of the most open smart locks on the market. You can talk directly to the lock without going through their cloud.

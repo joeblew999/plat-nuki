@@ -1,3 +1,9 @@
+---
+title: "ADR-001: Huma API Framework"
+date: 2024-01-15
+draft: false
+---
+
 # ADR-001: Huma API Framework
 
 ## Status
