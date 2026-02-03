@@ -39,13 +39,16 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Install Node.js dependencies
+      - name: Install dependencies
         working-directory: ./site
-        run: "[[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true"
+        run: bun install
 
       - name: Build with Hugo
         working-directory: ./site
